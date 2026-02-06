@@ -6,6 +6,9 @@ import astropy.io.ascii
 import numpy as np
 import glob
 
+# BLABLA JE FAIS DES TESTS PARTOUT 
+######################
+
 ###fre_range in Hz[1.01e11, 1.05e11]
 def get_spw_number(fre_range, input_vis):
     from casatools import msmetadata
