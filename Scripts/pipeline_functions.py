@@ -113,7 +113,7 @@ def image_continuum(vis_name, source_name, p_7m_12m):
 
     contspw_infor = get_spw_number([1.01e11, 1.06e11], finalvis)
     n_contspw = contspw_infor[0]
-    contspws = str(contspw_infor[1])[1:-1]
+    contspws = str(contspw_infor[1])[1:-1] # 1:-1 to remove the brackets, e.g., [3,4] to '3,4'
 
 
     contvis=finalvis[:-4] + '_cont.ms'
@@ -152,7 +152,7 @@ def image_continuum(vis_name, source_name, p_7m_12m):
        mosweight=True, # uncomment if mosaic
        specmode='mfs',
        deconvolver='multiscale',
-       scales=[0,5,10,15],
+       scales=[0,5,15],
        imsize = imsize,
        cell= cell,
        weighting = weighting,
@@ -272,7 +272,7 @@ def image_7m_12m_continuum(vis_7m, vis_12m, source_name):
        mosweight=True, # uncomment if mosaic
        specmode='mfs',
        deconvolver='multiscale',
-       scales=[0,5,10],
+       scales=[0,5,15],
        imsize = imsize,
        cell= cell,
        weighting = weighting,
@@ -383,7 +383,7 @@ def image_N2H(vis_name, source_name, p_7m_12m, v_start, v_width, n_vchan):
         # specmode='cubesource', #uncomment this line if observing an ephemeris source
         perchanweightdensity=False, # uncomment if you are running in CASA >=5.5.0
         deconvolver='multiscale',
-        scales=[0, 5, 10],
+        scales=[0, 5, 15],
         start=start,
         width=width,
         nchan=nchan,
@@ -435,7 +435,7 @@ def image_N2H(vis_name, source_name, p_7m_12m, v_start, v_width, n_vchan):
        # specmode='cubesource', #uncomment this line if observing an ephemeris source
        perchanweightdensity=False, # uncomment if you are running in CASA >=5.5.0
        deconvolver='multiscale',
-       scales=[0, 5, 10],
+       scales=[0, 5, 15],
        start=start,
        width=width,
        nchan=nchan,
@@ -631,7 +631,7 @@ def combine_and_image(name_7m, name_12m, run_contsub_or_no, source_name, v_start
         # specmode='cubesource', #uncomment this line if observing an ephemeris source
         perchanweightdensity=False, # uncomment if you are running in CASA >=5.5.0
         deconvolver='multiscale',
-        scales=[0, 5, 10],
+        scales=[0, 5, 15],
         start=start,
         width=width,
         nchan=nchan,
@@ -684,7 +684,7 @@ def combine_and_image(name_7m, name_12m, run_contsub_or_no, source_name, v_start
        # specmode='cubesource', #uncomment this line if observing an ephemeris source
        perchanweightdensity=False, # uncomment if you are running in CASA >=5.5.0
        deconvolver='multiscale',
-       scales=[0, 5, 10],
+       scales=[0, 5, 15],
        start=start,
        width=width,
        nchan=nchan,
