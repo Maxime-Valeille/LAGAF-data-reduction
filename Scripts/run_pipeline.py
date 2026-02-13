@@ -1,12 +1,19 @@
 import os
+import sys
 import astropy.io.ascii
 import numpy as np
 import glob
-import pipeline_functions
+
+# Add the Scripts directory to the path so pipeline_functions can be found
+script_dir = os.path.dirname(os.path.abspath(__file__))
+if script_dir not in sys.path:
+    sys.path.insert(0, script_dir)
+
+from pipeline_functions import *
 
 #"The code to run it"
-data = astropy.io.ascii.read('/home/reblodata/c22032322/LAGAF_pipeline/Book1.csv')
-clump_id = np.array(data['source_id'])
+data = astropy.io.ascii.read('/home/user/spxmv2/LAGAF/clump_data_infor.csv')
+clump_id = np.array(data['clump_id'])
 loc_7m = np.array(data['7m_loc'])
 loc_12m = np.array(data['12m_loc'])
 loc_tp = np.array(data['tp_loc'])
@@ -14,7 +21,7 @@ loc_folder = np.array(data['loc'])
 subloc_tp = np.array(data['tp_sub_loc'])
 
 
-clump_name = 'C9'
+clump_name = 'C1'
 clump_loc = np.where(clump_id == clump_name)[0]
 clump_loc_7m = loc_7m[clump_loc]
 clump_loc_12m = loc_12m[clump_loc]
@@ -23,11 +30,11 @@ clump_loc_folder = loc_folder[clump_loc]
 clump_subloc_tp = subloc_tp[clump_loc]
 
 basic_folder = '/export/home/spxnp1/LAGAF/2022.1.01204.S/'
-
+storage_folder = '/home/reblodata/spxmv2/LAGAF/Data_reduction/'
 ####go to the folder and make a clump folder
-os.chdir(basic_folder + clump_loc_folder[0])
-os.makedirs(clump_name+'combine', exist_ok=True)
-new_folder_loc = basic_folder + clump_loc_folder[0] + clump_name + 'combine/'
+os.chdir(storage_folder)
+os.makedirs(clump_name+'_combine', exist_ok=True)
+new_folder_loc = storage_folder + clump_name + '_combine/'
 
 ######build clump ms in 7m
 os.chdir(basic_folder + clump_loc_folder[0] + clump_loc_7m[0] + 'calibrated/working/')

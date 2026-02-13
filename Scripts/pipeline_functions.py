@@ -1,12 +1,19 @@
 import os
+import sys
 import astropy.io.ascii
 import numpy as np
 import glob
 
+# Add the path to analysisUtils
+sys.path.append("/home/user/spxmv2/analysis_utilities/analysis_scripts/")
+import analysisUtils as au
+
+from casatools import msmetadata, table
+from casatasks import split, concat, tclean, imstat, imhead, uvcontsub, imcontsub, importfits, imreframe, imtrans, imregrid, immath, feather, immoments, exportfits
+
 
 ###fre_range in Hz[1.01e11, 1.05e11]
 def get_spw_number(fre_range, input_vis):
-    from casatools import msmetadata
     msmd = msmetadata()
     msmd.open(input_vis)
     # get the channel effective bandwidths for spectral window, in m/s or Hz (default)
@@ -25,7 +32,6 @@ def get_spw_number(fre_range, input_vis):
 
 ####C52_12.ms, get mean coordinates of all the fields
 def get_mean_phasecenter(input_vis):
-    from casatools import table
     tb = table()
     tb.open(input_vis + '/FIELD')
     ####RA, DEC IN RADIANS
@@ -48,7 +54,6 @@ def get_mean_phasecenter(input_vis):
 
 #####get the phasecenter coordinates of certain field
 def get_coor_phasecenter(input_vis, input_field):
-    from casatools import msmetadata
     msmd = msmetadata()
     msmd.open(input_vis)
     f_loc = msmd.phasecenter(input_field)
@@ -76,6 +81,13 @@ def get_linefree_chan(input_spw):
 ####select the science spw and target, then combine, if this hasn't been done
 
 def spw_target():
+    # Clean up any existing output files from previous runs
+    if os.path.exists('calibrated.ms'):
+        os.system('rm -rf calibrated.ms calibrated.ms.flagversions')
+    if os.path.exists('calibrated_final.ms'):
+        os.system('rm -rf calibrated_final.ms calibrated_final.ms.flagversions')
+    
+    msmd = msmetadata()
 
     vislist = glob.glob('*[!_ts].ms')
 
@@ -89,21 +101,30 @@ def spw_target():
         sciencespws = ','.join(map(str,sciencespws))
         msmd.close()
 
-        split(vis=myvis,outputvis=myvis+'.split.cal',spw=sciencespws)
+        output_vis = myvis+'.split.cal'
+        # Remove existing output file if it exists
+        if os.path.exists(output_vis):
+            os.system(f'rm -rf {output_vis}')
+        
+        split(vis=myvis,outputvis=output_vis,spw=sciencespws,datacolumn='all')
 
     vislist=glob.glob('*.ms.split.cal')
 
 
     concatvis='calibrated.ms'
-    #rmtables(concatvis)
-    #os.system('rm -rf ' + concatvis + '.flagversions')
+    # Remove existing output file if it exists
+    if os.path.exists(concatvis):
+        os.system(f'rm -rf {concatvis}')
+        os.system(f'rm -rf {concatvis}.flagversions')
     concat(vis=vislist, concatvis=concatvis)
 
     # in CASA, split only the sources data
     sourcevis='calibrated_final.ms'
-    #rmtables(sourcevis)
-    #os.system('rm -rf ' + sourcevis + '.flagversions')
-    split(vis=concatvis, intent='*TARGET*', outputvis=sourcevis, datacolumn='data')
+    # Remove existing output file if it exists
+    if os.path.exists(sourcevis):
+        os.system(f'rm -rf {sourcevis}')
+        os.system(f'rm -rf {sourcevis}.flagversions')
+    split(vis=concatvis, intent='*TARGET*', outputvis=sourcevis, datacolumn='data', observation='')
 
 
 ####iamge the continuum image for one ms.
@@ -113,7 +134,7 @@ def image_continuum(vis_name, source_name, p_7m_12m):
 
     contspw_infor = get_spw_number([1.01e11, 1.06e11], finalvis)
     n_contspw = contspw_infor[0]
-    contspws = str(contspw_infor[1])[1:-1]
+    contspws = str(contspw_infor[1])[1:-1] # 1:-1 to remove the brackets, e.g., [3,4] to '3,4'
 
 
     contvis=finalvis[:-4] + '_cont.ms'
@@ -152,7 +173,7 @@ def image_continuum(vis_name, source_name, p_7m_12m):
        mosweight=True, # uncomment if mosaic
        specmode='mfs',
        deconvolver='multiscale',
-       scales=[0,5,10,15],
+       scales=[0,5,15],
        imsize = imsize,
        cell= cell,
        weighting = weighting,
@@ -272,7 +293,7 @@ def image_7m_12m_continuum(vis_7m, vis_12m, source_name):
        mosweight=True, # uncomment if mosaic
        specmode='mfs',
        deconvolver='multiscale',
-       scales=[0,5,10],
+       scales=[0,5,15],
        imsize = imsize,
        cell= cell,
        weighting = weighting,
@@ -383,7 +404,7 @@ def image_N2H(vis_name, source_name, p_7m_12m, v_start, v_width, n_vchan):
         # specmode='cubesource', #uncomment this line if observing an ephemeris source
         perchanweightdensity=False, # uncomment if you are running in CASA >=5.5.0
         deconvolver='multiscale',
-        scales=[0, 5, 10],
+        scales=[0, 5, 15],
         start=start,
         width=width,
         nchan=nchan,
@@ -435,7 +456,7 @@ def image_N2H(vis_name, source_name, p_7m_12m, v_start, v_width, n_vchan):
        # specmode='cubesource', #uncomment this line if observing an ephemeris source
        perchanweightdensity=False, # uncomment if you are running in CASA >=5.5.0
        deconvolver='multiscale',
-       scales=[0, 5, 10],
+       scales=[0, 5, 15],
        start=start,
        width=width,
        nchan=nchan,
@@ -631,7 +652,7 @@ def combine_and_image(name_7m, name_12m, run_contsub_or_no, source_name, v_start
         # specmode='cubesource', #uncomment this line if observing an ephemeris source
         perchanweightdensity=False, # uncomment if you are running in CASA >=5.5.0
         deconvolver='multiscale',
-        scales=[0, 5, 10],
+        scales=[0, 5, 15],
         start=start,
         width=width,
         nchan=nchan,
@@ -684,7 +705,7 @@ def combine_and_image(name_7m, name_12m, run_contsub_or_no, source_name, v_start
        # specmode='cubesource', #uncomment this line if observing an ephemeris source
        perchanweightdensity=False, # uncomment if you are running in CASA >=5.5.0
        deconvolver='multiscale',
-       scales=[0, 5, 10],
+       scales=[0, 5, 15],
        start=start,
        width=width,
        nchan=nchan,
